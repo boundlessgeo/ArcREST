@@ -28,6 +28,10 @@ from ..packages.six.moves.urllib import request
 from ..packages.six.moves import http_cookiejar as cookiejar
 from ..packages.six.moves.urllib_parse import urlencode
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 ########################################################################
 __version__ = "3.5.9"
 ########################################################################
@@ -202,6 +206,16 @@ class BaseWebOperations(BaseOperation):
     _last_method = None
     _useragent = "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0"
     _verify = False
+    _add_headers = None
+
+    @classmethod
+    def set_add_headers(cls, value):
+        cls._add_headers = value
+
+    @classmethod
+    def get_add_headers(cls):
+        return cls._add_headers
+
     def __init__(self, verify=False):
         self._verify = verify
     #----------------------------------------------------------------------
@@ -422,6 +436,10 @@ class BaseWebOperations(BaseOperation):
             files = {}
         if additional_headers is None:
             additional_headers = {}
+        add_headers = BaseWebOperations._add_headers
+        if add_headers is not None \
+                and isinstance(add_headers, dict):
+            additional_headers.update(add_headers)
         if custom_handlers is None:
             custom_handlers = []
         if self._verify == False and \
@@ -464,6 +482,7 @@ class BaseWebOperations(BaseOperation):
         for k,v in additional_headers.items():
             headers[k] = v
             del k,v
+        logger.debug('post headers = {0}'.format(headers))
         hasContext = 'context' in self._has_context(request.urlopen)
         if self._verify == False and \
            sys.version_info[0:3] >= (2, 7, 9) and \
@@ -579,10 +598,17 @@ class BaseWebOperations(BaseOperation):
         self._last_method = "GET"
         CHUNK = 4056
         param_dict, handler, cj = self._processHandler(securityHandler, param_dict)
-        if additional_headers is not None:
-            headers = [] + additional_headers
+        if additional_headers is None:
+            additional_headers = {}
+        add_headers = BaseWebOperations._add_headers
+        if add_headers is not None \
+                and isinstance(add_headers, dict):
+            additional_headers.update(add_headers)
+        if additional_headers:
+            headers = [] + additional_headers.items()
         else:
             headers = []
+        logger.debug('get headers = {0}'.format(headers))
         pass_headers = {}
         if securityHandler and securityHandler.referer_url:
             pass_headers['referer'] = securityHandler.referer_url

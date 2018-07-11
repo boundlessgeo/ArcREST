@@ -4,6 +4,7 @@ import json
 import time
 import tempfile
 from .._abstract.abstract import BaseAGSServer, DynamicData, BaseSecurityHandler
+from ..web._base import BaseWebOperations
 from .layer import FeatureLayer, TableLayer, RasterLayer, GroupLayer, SchematicsLayer
 from ._schematicsservice import SchematicsService
 from ._geoprocessing import GPJob
@@ -12,6 +13,10 @@ from ..common import filters, geometry
 from ..common.geometry import Polygon, Envelope, SpatialReference
 from ..common.general import Feature
 from ..packages.six.moves.urllib_parse import urlencode
+import logging
+
+logger = logging.getLogger(__name__)
+
 ########################################################################
 class MapService(BaseAGSServer):
     """ contains information about a map service """
@@ -57,11 +62,14 @@ class MapService(BaseAGSServer):
     #----------------------------------------------------------------------
     def __init__(self, url, securityHandler=None,
                  initialize=False, proxy_url=None,
-                 proxy_port=None):
+                 proxy_port=None, add_headers=None):
         """Constructor"""
         self._proxy_url= proxy_url
         self._proxy_port = proxy_port
         self._url = url
+        BaseWebOperations.set_add_headers(add_headers)
+        logger.debug('BaseWebOperations._add_headers = {0}'.format(
+            BaseWebOperations.get_add_headers()))
         if securityHandler is not None and \
            isinstance(securityHandler, (security.AGSTokenSecurityHandler,
                                         security.PortalServerSecurityHandler,
